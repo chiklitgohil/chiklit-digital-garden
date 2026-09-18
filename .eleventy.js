@@ -1,6 +1,3 @@
-require("dotenv").config();
-const BASE_PATH = process.env.BASE_PATH || "";
-console.log("Digital Garden BASE_PATH:", BASE_PATH);
 const markdownIt = require("markdown-it");
 const fs = require("fs");
 const matter = require("gray-matter");
@@ -26,7 +23,7 @@ const pluginRss = require("@11ty/eleventy-plugin-rss");
 // pay for each distinct input once per process. Resolve the exact terser and
 // clean-css instances html-minifier-terser itself uses.
 const htmlMinifierRequire = require("module").createRequire(
-  require.resolve("html-minifier-terser"),
+  require.resolve("html-minifier-terser")
 );
 const terser = htmlMinifierRequire("terser");
 const CleanCSS = htmlMinifierRequire("clean-css");
@@ -146,7 +143,7 @@ function transformImage(src, cls, alt, sizes, widths = ["500", "700"]) {
   pendingImageJobs.push(
     Image(src, options).catch((err) => {
       console.warn(`[image] Skipping optimization of ${src}: ${err.message}`);
-    }),
+    })
   );
   let metadata = Image.statsSync(src, options);
   return metadata;
@@ -154,9 +151,7 @@ function transformImage(src, cls, alt, sizes, widths = ["500", "700"]) {
 
 function getAnchorLink(filePath, linkTitle) {
   const { attributes, innerHTML } = getAnchorAttributes(filePath, linkTitle);
-  return `<a ${Object.keys(attributes)
-    .map((key) => `${key}="${attributes[key]}"`)
-    .join(" ")}>${innerHTML}</a>`;
+  return `<a ${Object.keys(attributes).map(key => `${key}="${attributes[key]}"`).join(" ")}>${innerHTML}</a>`;
 }
 
 // Resolving a wikilink target reads and YAML-parses the target note's
@@ -187,7 +182,7 @@ function computeAnchorAttributes(filePath, linkTitle) {
 
   let noteIcon = process.env.NOTE_ICON_DEFAULT;
   const title = linkTitle ? linkTitle : fileName;
-  let permalink = `${BASE_PATH}/notes/${slugify(fileName)}`;
+  let permalink = `/notes/${slugify(fileName)}`;
   let deadLink = false;
   try {
     const startPath = "./src/site/notes/";
@@ -206,7 +201,7 @@ function computeAnchorAttributes(filePath, linkTitle) {
       frontMatter.data.tags &&
       frontMatter.data.tags.indexOf("gardenEntry") != -1
     ) {
-      permalink = `${BASE_PATH}/`;
+      permalink = "/";
     }
     if (frontMatter.data.noteIcon) {
       noteIcon = frontMatter.data.noteIcon;
@@ -218,31 +213,30 @@ function computeAnchorAttributes(filePath, linkTitle) {
   if (deadLink) {
     return {
       attributes: {
-        class: "internal-link is-unresolved",
-        href: "/404",
-        target: "",
+        "class": "internal-link is-unresolved",
+        "href": "/404",
+        "target": "",
       },
       innerHTML: title,
-    };
+    }
   }
   return {
     attributes: {
-      class: "internal-link",
-      target: "",
+      "class": "internal-link",
+      "target": "",
       "data-note-icon": noteIcon,
-      href: `${permalink}${headerLinkPath}`,
+      "href": `${permalink}${headerLinkPath}`,
     },
     innerHTML: title,
-  };
+  }
 }
 
 const tagRegex = /(^|\s|\>)(#[^\s!@#$%^&*()=+\.,\[{\]};:'"?><]+)(?!([^<]*>))/g;
 
 const markdownFileTypeRegex = /\.(md|markdown)$/i;
-const isMarkdownPage = (inputPath) =>
-  inputPath && inputPath.match(markdownFileTypeRegex);
+const isMarkdownPage = (inputPath) => inputPath && inputPath.match(markdownFileTypeRegex);
 
-module.exports = function (eleventyConfig) {
+module.exports = function(eleventyConfig) {
   eleventyConfig.setLiquidOptions({
     dynamicPartials: true,
   });
@@ -258,8 +252,8 @@ module.exports = function (eleventyConfig) {
     })
     .use(require("markdown-it-mark"))
     .use(require("markdown-it-footnote"))
-    .use(function (md) {
-      md.renderer.rules.hashtag_open = function (tokens, idx) {
+    .use(function(md) {
+      md.renderer.rules.hashtag_open = function(tokens, idx) {
         return '<a class="tag">';
       };
     })
@@ -278,11 +272,11 @@ module.exports = function (eleventyConfig) {
     })
     .use(namedHeadingsFilter)
     .use(basesPlugin)
-    .use(function (md) {
+    .use(function(md) {
       //https://github.com/DCsunset/markdown-it-mermaid-plugin
       const origFenceRule =
         md.renderer.rules.fence ||
-        function (tokens, idx, options, env, self) {
+        function(tokens, idx, options, env, self) {
           return self.renderToken(tokens, idx, options, env, self);
         };
       md.renderer.rules.fence = (tokens, idx, options, env, slf) => {
@@ -298,38 +292,36 @@ module.exports = function (eleventyConfig) {
         if (token.info === "gist") {
           const code = token.content.trim();
           // Support multiple gist references, one per line
-          const gistLines = code.split("\n").filter((line) => line.trim());
+          const gistLines = code.split('\n').filter(line => line.trim());
 
-          const scripts = gistLines.map((line) => {
+          const scripts = gistLines.map(line => {
             line = line.trim();
             // Parse format: [username/]gist-id[#filename]
-            const parts = line.split("#");
+            const parts = line.split('#');
             const gistPath = parts[0];
-            const filename = parts[1] || "";
+            const filename = parts[1] || '';
 
             // Build the GitHub Gist embed URL
             const gistUrl = `https://gist.github.com/${gistPath}.js`;
-            const scriptUrl = filename
-              ? `${gistUrl}?file=${encodeURIComponent(filename)}`
-              : gistUrl;
+            const scriptUrl = filename ? `${gistUrl}?file=${encodeURIComponent(filename)}` : gistUrl;
 
             return `<script src="${scriptUrl}"></script>`;
           });
-          return scripts.join("\n");
+          return scripts.join('\n');
         }
         if (token.info.startsWith("ad-")) {
           const code = token.content.trim();
-          const parts = code.split("\n");
+          const parts = code.split("\n")
           let titleLine;
           let collapse;
-          let collapsible = false;
-          let collapsed = true;
+          let collapsible = false
+          let collapsed = true
           let icon;
           let color;
-          let nbLinesToSkip = 0;
+          let nbLinesToSkip = 0
           for (let i = 0; i < 4; i++) {
             if (parts[i] && parts[i].trim()) {
-              let line = parts[i] && parts[i].trim().toLowerCase();
+              let line = parts[i] && parts[i].trim().toLowerCase()
               if (line.startsWith("title:")) {
                 titleLine = line.substring(6);
                 nbLinesToSkip++;
@@ -337,10 +329,10 @@ module.exports = function (eleventyConfig) {
                 icon = line.substring(5);
                 nbLinesToSkip++;
               } else if (line.startsWith("collapse:")) {
-                collapsible = true;
+                collapsible = true
                 collapse = line.substring(9);
-                if (collapse && collapse.trim().toLowerCase() == "open") {
-                  collapsed = false;
+                if (collapse && collapse.trim().toLowerCase() == 'open') {
+                  collapsed = false
                 }
                 nbLinesToSkip++;
               } else if (line.startsWith("color:")) {
@@ -349,28 +341,24 @@ module.exports = function (eleventyConfig) {
               }
             }
           }
-          const foldDiv = collapsible
-            ? `<div class="callout-fold">
+          const foldDiv = collapsible ? `<div class="callout-fold">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-chevron-down">
               <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
-          </div>`
-            : "";
+          </div>` : "";
           const titleDiv = titleLine
             ? `<div class="callout-title"><div class="callout-title-inner">${titleLine}</div>${foldDiv}</div>`
             : "";
-          let collapseClasses =
-            titleLine && collapsible ? "is-collapsible" : "";
+          let collapseClasses = titleLine && collapsible ? 'is-collapsible' : ''
           if (collapsible && collapsed) {
-            collapseClasses += " is-collapsed";
+            collapseClasses += " is-collapsed"
           }
 
-          let res = `<div data-callout-metadata class="callout ${collapseClasses}" data-callout="${token.info.substring(
-            3,
-          )}">${titleDiv}\n<div class="callout-content">${md.render(
-            parts.slice(nbLinesToSkip).join("\n"),
-          )}</div></div>`;
-          return res;
+          let res = `<div data-callout-metadata class="callout ${collapseClasses}" data-callout="${token.info.substring(3)
+            }">${titleDiv}\n<div class="callout-content">${md.render(
+              parts.slice(nbLinesToSkip).join("\n")
+            )}</div></div>`;
+          return res
         }
 
         // Other languages
@@ -379,7 +367,7 @@ module.exports = function (eleventyConfig) {
 
       const defaultImageRule =
         md.renderer.rules.image ||
-        function (tokens, idx, options, env, self) {
+        function(tokens, idx, options, env, self) {
           return self.renderToken(tokens, idx, options, env, self);
         };
       md.renderer.rules.image = (tokens, idx, options, env, self) => {
@@ -392,9 +380,7 @@ module.exports = function (eleventyConfig) {
 
         let metaData = "";
         if (widthAndMetaData.length > 1) {
-          metaData = widthAndMetaData
-            .slice(0, widthAndMetaData.length - 1)
-            .join(" ");
+          metaData = widthAndMetaData.slice(0, widthAndMetaData.length - 1).join(" ");
         }
 
         if (!lastValueIsNumber) {
@@ -416,7 +402,7 @@ module.exports = function (eleventyConfig) {
 
       const defaultLinkRule =
         md.renderer.rules.link_open ||
-        function (tokens, idx, options, env, self) {
+        function(tokens, idx, options, env, self) {
           return self.renderToken(tokens, idx, options, env, self);
         };
       function isExternalHref(href) {
@@ -435,7 +421,7 @@ module.exports = function (eleventyConfig) {
         return /^[a-z][a-z0-9+.-]*:/i.test(trimmed);
       }
 
-      md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+      md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
         const hrefIndex = tokens[idx].attrIndex("href");
         const href =
           hrefIndex >= 0 && tokens[idx].attrs && tokens[idx].attrs[hrefIndex]
@@ -479,14 +465,14 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.setLibrary("md", markdownLib);
 
-  eleventyConfig.addFilter("isoDate", function (date) {
+  eleventyConfig.addFilter("isoDate", function(date) {
     return date && date.toISOString();
   });
 
-  eleventyConfig.addFilter("link", function (str) {
+  eleventyConfig.addFilter("link", function(str) {
     return (
       str &&
-      str.replace(/\[\[(.*?\|.*?)\]\]/g, function (match, p1) {
+      str.replace(/\[\[(.*?\|.*?)\]\]/g, function(match, p1) {
         //Check if it is an embedded excalidraw drawing or mathjax javascript
         if (p1.indexOf("],[") > -1 || p1.indexOf('"$"') > -1) {
           return match;
@@ -504,7 +490,7 @@ module.exports = function (eleventyConfig) {
   // browser resolve them one directory too deep.
   // pageInputPath overrides this.page for contexts like the feed, where the
   // rendered content belongs to a looped-over note rather than the current page.
-  eleventyConfig.addFilter("resolveMdLinks", function (str, pageInputPath) {
+  eleventyConfig.addFilter("resolveMdLinks", function(str, pageInputPath) {
     const inputPath = pageInputPath || (this.page && this.page.inputPath);
     if (!str || !inputPath) {
       return str;
@@ -517,55 +503,51 @@ module.exports = function (eleventyConfig) {
     }
     const vaultFilePath = normalizedInput.slice(rootIndex + notesRoot.length);
     const sourceDir = nodePath.posix.dirname(vaultFilePath);
-    return convertMdHrefs(
-      str,
-      sourceDir === "." ? "" : sourceDir,
-      (candidates) => {
-        let firstAttempt = null;
-        for (const vaultPath of candidates) {
-          const { attributes } = getAnchorAttributes(vaultPath);
-          if (!attributes.class.includes("is-unresolved")) {
-            return attributes;
-          }
-          firstAttempt = firstAttempt || attributes;
+    return convertMdHrefs(str, sourceDir === "." ? "" : sourceDir, (candidates) => {
+      let firstAttempt = null;
+      for (const vaultPath of candidates) {
+        const { attributes } = getAnchorAttributes(vaultPath);
+        if (!attributes.class.includes("is-unresolved")) {
+          return attributes;
         }
-        // Unresolved targets keep getAnchorAttributes' /404 behavior, matching
-        // how dead wikilinks are handled.
-        return firstAttempt;
-      },
-    );
+        firstAttempt = firstAttempt || attributes;
+      }
+      // Unresolved targets keep getAnchorAttributes' /404 behavior, matching
+      // how dead wikilinks are handled.
+      return firstAttempt;
+    });
   });
 
-  eleventyConfig.addFilter("taggify", function (str) {
+  eleventyConfig.addFilter("taggify", function(str) {
     return (
       str &&
-      str.replace(tagRegex, function (match, precede, tag) {
+      str.replace(tagRegex, function(match, precede, tag) {
         return `${precede}<a class="tag" data-content="${tag}">${tag}</a>`;
       })
     );
   });
 
-  eleventyConfig.addFilter("hideDataview", function (str) {
+  eleventyConfig.addFilter("hideDataview", function(str) {
     return (
       str &&
-      str.replace(/\(\S+\:\:(.*)\)/g, function (_, value) {
+      str.replace(/\(\S+\:\:(.*)\)/g, function(_, value) {
         return value.trim();
       })
     );
   });
 
-  eleventyConfig.addFilter("xmlSafe", function (str) {
+  eleventyConfig.addFilter("xmlSafe", function(str) {
     if (!str) return str;
     // Remove invalid XML characters (0xFFFE, 0xFFFF, etc.)
-    str = str.replace(/\uFFFE|\uFFFF/g, "");
+    str = str.replace(/\uFFFE|\uFFFF/g, '');
     // Escape ]]> in content to prevent CDATA issues
-    str = str.replace(/\]\]>/g, "]]&gt;");
+    str = str.replace(/\]\]>/g, ']]&gt;');
     // Self-close br, hr, and link tags
-    str = str.replace(/<br\s*>/gi, "<br />");
-    str = str.replace(/<hr\s*>/gi, "<hr />");
-    str = str.replace(/<link([^>]*?)(?<!\/)>/gi, "<link$1 />");
+    str = str.replace(/<br\s*>/gi, '<br />');
+    str = str.replace(/<hr\s*>/gi, '<hr />');
+    str = str.replace(/<link([^>]*?)(?<!\/)>/gi, '<link$1 />');
     // Self-close img tags that aren't already self-closed
-    str = str.replace(/<img([^>]*?)(?<!\/)>/gi, "<img$1 />");
+    str = str.replace(/<img([^>]*?)(?<!\/)>/gi, '<img$1 />');
     return str;
   });
 
@@ -575,9 +557,7 @@ module.exports = function (eleventyConfig) {
   // single parsed tree in the combined "obsidian-html" transform after their
   // helper definitions.
   function transformDataviewJsLinks(parsed) {
-    for (const dataViewJsLink of parsed.querySelectorAll(
-      "a[data-href].internal-link",
-    )) {
+    for (const dataViewJsLink of parsed.querySelectorAll("a[data-href].internal-link")) {
       const notePath = dataViewJsLink.getAttribute("data-href");
       const title = dataViewJsLink.innerHTML;
       const { attributes, innerHTML } = getAnchorAttributes(notePath, title);
@@ -608,14 +588,14 @@ module.exports = function (eleventyConfig) {
 
       content = content.replace(
         calloutMeta,
-        function (metaInfoMatch, callout, metaData, collapse, title) {
+        function(metaInfoMatch, callout, metaData, collapse, title) {
           isCollapsable = Boolean(collapse);
           isCollapsed = collapse === "-";
           const titleText = title.replace(/(<\/{0,1}\w+>)/, "")
             ? title
             : `${callout.charAt(0).toUpperCase()}${callout
-                .substring(1)
-                .toLowerCase()}`;
+              .substring(1)
+              .toLowerCase()}`;
           const fold = isCollapsable
             ? `<div class="callout-fold"><i icon-name="chevron-down"></i></div>`
             : ``;
@@ -624,27 +604,25 @@ module.exports = function (eleventyConfig) {
           calloutMetaData = metaData;
           titleDiv = `<div class="callout-title"><div class="callout-title-inner">${titleText}</div>${fold}</div>`;
           return "";
-        },
+        }
       );
 
       /* Hacky fix for callouts with only a title */
       if (content === "\n<p>\n") {
         content = "";
       }
-      let contentDiv = content
-        ? `\n<div class="callout-content">${content}</div>`
-        : "";
+      let contentDiv = content ? `\n<div class="callout-content">${content}</div>` : "";
 
       blockquote.tagName = "div";
       blockquote.classList.add("callout");
       blockquote.classList.add(isCollapsable ? "is-collapsible" : "");
       blockquote.classList.add(isCollapsed ? "is-collapsed" : "");
       blockquote.setAttribute("data-callout", calloutType.toLowerCase());
-      calloutMetaData &&
-        blockquote.setAttribute("data-callout-metadata", calloutMetaData);
+      calloutMetaData && blockquote.setAttribute("data-callout-metadata", calloutMetaData);
       blockquote.innerHTML = `${titleDiv}${contentDiv}`;
     }
   }
+
 
   function fillPictureSourceSets(src, cls, alt, meta, width, imageTag) {
     imageTag.tagName = "picture";
@@ -657,19 +635,19 @@ module.exports = function (eleventyConfig) {
       media="(max-width:480px)"
       srcset="${meta.jpeg[0].url}"
       />
-      `;
+      `
     if (meta.webp && meta.webp[1] && meta.webp[1].url) {
       html += `<source
         media="(max-width:1920px)"
         srcset="${meta.webp[1].url}"
         type="image/webp"
-        />`;
+        />`
     }
     if (meta.jpeg && meta.jpeg[1] && meta.jpeg[1].url) {
       html += `<source
         media="(max-width:1920px)"
         srcset="${meta.jpeg[1].url}"
-        />`;
+        />`
     }
     html += `<img
       class="${cls.toString()}"
@@ -679,6 +657,7 @@ module.exports = function (eleventyConfig) {
       />`;
     imageTag.innerHTML = html;
   }
+
 
   async function transformPictures(parsed) {
     if (process.env.USE_FULL_RESOLUTION_IMAGES === "true") {
@@ -698,14 +677,14 @@ module.exports = function (eleventyConfig) {
         }
         const cls = imageTag.classList.value;
         const alt = imageTag.getAttribute("alt");
-        const width = imageTag.getAttribute("width") || "";
+        const width = imageTag.getAttribute("width") || '';
 
         try {
           const meta = transformImage(
             "./src/site" + decodeURI(imageTag.getAttribute("src")),
             cls.toString(),
             alt,
-            ["(max-width: 480px)", "(max-width: 1024px)"],
+            ["(max-width: 480px)", "(max-width: 1024px)"]
           );
 
           if (meta) {
@@ -727,7 +706,7 @@ module.exports = function (eleventyConfig) {
     }
 
     for (const t of parsed.querySelectorAll(
-      ".cm-s-obsidian > .block-language-dataview > table",
+      ".cm-s-obsidian > .block-language-dataview > table"
     )) {
       t.classList.add("dataview");
       t.classList.add("table-view-table");
@@ -742,7 +721,7 @@ module.exports = function (eleventyConfig) {
     }
   }
 
-  eleventyConfig.addTransform("obsidian-html", async function (str) {
+  eleventyConfig.addTransform("obsidian-html", async function(str) {
     if (!str || !isMarkdownPage(this.page.inputPath)) {
       return str;
     }
@@ -758,7 +737,7 @@ module.exports = function (eleventyConfig) {
   function convertCanvasLinks(str) {
     return (
       str &&
-      str.replace(/\[\[(.*?\|.*?)\]\]/g, function (match, p1) {
+      str.replace(/\[\[(.*?\|.*?)\]\]/g, function(match, p1) {
         if (p1.indexOf("],[") > -1 || p1.indexOf('"$"') > -1) {
           return match;
         }
@@ -772,29 +751,25 @@ module.exports = function (eleventyConfig) {
   function convertCanvasTags(str) {
     return (
       str &&
-      str.replace(tagRegex, function (match, precede, tag) {
+      str.replace(tagRegex, function(match, precede, tag) {
         return `${precede}<a class="tag" data-content="${tag}">${tag}</a>`;
       })
     );
   }
 
   // Render markdown in canvas text nodes at build time
-  eleventyConfig.addTransform("canvas-markdown", function (str) {
+  eleventyConfig.addTransform("canvas-markdown", function(str) {
     if (!str || !str.includes('data-markdown="')) {
       return str;
     }
 
     try {
       const parsed = parse(str);
-      for (const textNode of parsed.querySelectorAll(
-        ".canvas-node-text-content[data-markdown]",
-      )) {
-        const base64Content = textNode.getAttribute("data-markdown");
+      for (const textNode of parsed.querySelectorAll('.canvas-node-text-content[data-markdown]')) {
+        const base64Content = textNode.getAttribute('data-markdown');
         if (base64Content) {
           try {
-            const markdown = Buffer.from(base64Content, "base64").toString(
-              "utf8",
-            );
+            const markdown = Buffer.from(base64Content, 'base64').toString('utf8');
             // Render markdown
             let rendered = markdownLib.render(markdown);
             // Apply wiki-link conversion (same as link filter)
@@ -803,35 +778,30 @@ module.exports = function (eleventyConfig) {
             rendered = convertCanvasTags(rendered);
             // Apply callout transformation (reuse shared helper)
             const renderedParsed = parse(rendered);
-            transformCalloutBlockquotes(
-              renderedParsed.querySelectorAll("blockquote"),
-            );
+            transformCalloutBlockquotes(renderedParsed.querySelectorAll("blockquote"));
             rendered = renderedParsed.innerHTML;
             textNode.innerHTML = rendered;
-            textNode.removeAttribute("data-markdown");
+            textNode.removeAttribute('data-markdown');
           } catch (e) {
             // If markdown rendering fails, show raw text as fallback
-            console.error("Failed to render canvas markdown:", e);
-            const rawText = Buffer.from(base64Content, "base64").toString(
-              "utf8",
-            );
+            console.error('Failed to render canvas markdown:', e);
+            const rawText = Buffer.from(base64Content, 'base64').toString('utf8');
             textNode.innerHTML = `<pre>${rawText}</pre>`;
-            textNode.removeAttribute("data-markdown");
+            textNode.removeAttribute('data-markdown');
           }
         }
       }
       return parsed.innerHTML;
     } catch (e) {
       // If parsing fails entirely, return original content
-      console.error("Failed to parse canvas content:", e);
+      console.error('Failed to parse canvas content:', e);
       return str;
     }
   });
 
-  eleventyConfig.addTransform("htmlMinifier", async function (content) {
+  eleventyConfig.addTransform("htmlMinifier", async function(content) {
     if (
-      (process.env.NODE_ENV === "production" ||
-        process.env.ELEVENTY_ENV === "prod") &&
+      (process.env.NODE_ENV === "production" || process.env.ELEVENTY_ENV === "prod") &&
       (this.page.outputPath || "").endsWith(".html")
     ) {
       try {
@@ -859,8 +829,7 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.addTransform("jsonMinifier", async (content, outputPath) => {
     if (
-      (process.env.NODE_ENV === "production" ||
-        process.env.ELEVENTY_ENV === "prod") &&
+      (process.env.NODE_ENV === "production" || process.env.ELEVENTY_ENV === "prod") &&
       outputPath &&
       outputPath.endsWith(".json")
     ) {
@@ -884,9 +853,7 @@ module.exports = function (eleventyConfig) {
   });
   eleventyConfig.on("eleventy.after", async () => {
     if (pendingImageJobs.length > 0) {
-      console.log(
-        `[image] Waiting for ${pendingImageJobs.length} image optimization jobs...`,
-      );
+      console.log(`[image] Waiting for ${pendingImageJobs.length} image optimization jobs...`);
       await Promise.all(pendingImageJobs);
       console.log(`[image] Image optimization complete`);
       pendingImageJobs.length = 0;
@@ -902,17 +869,17 @@ module.exports = function (eleventyConfig) {
   // Canvas files are pre-compiled HTML by the plugin - don't process as markdown
   eleventyConfig.addExtension("canvas", {
     read: true,
-    compile: async function (inputContent, inputPath) {
+    compile: async function(inputContent, inputPath) {
       // Extract content after frontmatter (canvas HTML is already compiled by plugin)
       const parsed = matter(inputContent, matterOptions);
       return async (data) => {
         // Return the HTML content directly without markdown processing
         return parsed.content;
       };
-    },
+    }
   });
 
-  eleventyConfig.addFilter("dateToZulu", function (date) {
+  eleventyConfig.addFilter("dateToZulu", function(date) {
     try {
       return new Date(date).toISOString("dd-MM-yyyyTHH:mm:ssZ");
     } catch {
@@ -920,7 +887,7 @@ module.exports = function (eleventyConfig) {
     }
   });
 
-  eleventyConfig.addFilter("jsonify", function (variable) {
+  eleventyConfig.addFilter("jsonify", function(variable) {
     return JSON.stringify(variable) || '""';
   });
 
@@ -938,71 +905,6 @@ module.exports = function (eleventyConfig) {
   pluginLoader.applyEleventyHooks(eleventyConfig);
 
   userEleventySetup(eleventyConfig);
-
-  // --- BEGIN GARDEN BASE_PATH TRANSFORM ---
-  eleventyConfig.addTransform("basePathRewriter", function (content) {
-    const bp = process.env.BASE_PATH;
-    const outputPath = this.page.outputPath;
-    if (!bp || bp === "/" || !outputPath) return content;
-
-    // Rewrite URLs in HTML
-    if (outputPath.endsWith(".html")) {
-      const parsed = parse(content);
-      let changed = false;
-
-      const updateAttr = (nodes, attr) => {
-        nodes.forEach(node => {
-          let val = node.getAttribute(attr);
-          if (val && val.startsWith("/") && !val.startsWith("//") && !val.startsWith(bp + "/") && val !== bp && val !== bp + "/") {
-            node.setAttribute(attr, bp + val);
-            changed = true;
-          }
-        });
-      };
-
-      updateAttr(parsed.querySelectorAll("[href]"), "href");
-      updateAttr(parsed.querySelectorAll("[src]"), "src");
-      updateAttr(parsed.querySelectorAll("[action]"), "action");
-      updateAttr(parsed.querySelectorAll('meta[content^="/"]'), "content");
-
-      // Replace fetch calls in scripts
-      parsed.querySelectorAll("script").forEach(node => {
-        if (node.textContent) {
-          let text = node.textContent;
-          let newText = text.replace(/fetch\(['"]\/(?!\/)/g, match => {
-            const quote = match[6]; // fetch(' is 6 chars, quote is index 6
-            return `fetch(${quote}${bp}/`;
-          });
-          if (newText !== text) {
-            node.textContent = newText;
-            changed = true;
-          }
-        }
-      });
-
-      return changed ? parsed.innerHTML : content;
-    }
-
-    // Rewrite URLs in JSON (graph.json, searchIndex.json)
-    if (outputPath.endsWith(".json")) {
-      try {
-        let jsonStr = content;
-        const bpRegexStr = bp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`"\\/(?!\\/)(?!${bpRegexStr}\\/)([^"\\n]*)"`, 'g');
-        jsonStr = jsonStr.replace(regex, `"${bp}/$1"`);
-        
-        const exactRoot = new RegExp(`"\\/"`, 'g');
-        jsonStr = jsonStr.replace(exactRoot, `"${bp}/"`);
-        
-        return jsonStr;
-      } catch (e) {
-        return content;
-      }
-    }
-
-    return content;
-  });
-  // --- END GARDEN BASE_PATH TRANSFORM ---
 
   return {
     dir: {
