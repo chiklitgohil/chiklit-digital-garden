@@ -22,7 +22,7 @@ permalink: "notes/{{ page.fileSlug | slugify }}/"
     {% set regionFallback = "components/navbar.njk" %}
     {% include "components/pluginRegion.njk" %}
 
-    <main class="content cm-s-obsidian {{contentClasses}}">
+    <main class="content cm-s-obsidian print {{contentClasses}}">
       <header>
         {% if settings.dgShowInlineTitle === true %}
           <h1 data-note-icon="{% if noteIcon %}{{noteIcon}}{% else %}{{meta.noteIconsSettings.default}}{% endif %}">{% if title %}{{ title }}{% else %}{{ page.fileSlug }}{% endif %}</h1>
